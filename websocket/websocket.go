@@ -78,6 +78,7 @@ func (wsConnection *WsConnection) handleRequests() {
 			close(wsConnection.responses)
 			break
 		} else {
+			log.Printf("message: %s", message)
 			wsConnection.requests <- WsMessage{Type: messageType, Body: wsConnection.requestDeserializer(message)}
 		}
 	}

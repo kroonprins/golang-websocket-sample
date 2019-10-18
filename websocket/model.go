@@ -11,7 +11,7 @@ type WsMessage struct {
 
 type WsMessageBody struct {
 	Type    string
-	Content string
+	Content interface{}
 }
 
 type WsConnection struct {
