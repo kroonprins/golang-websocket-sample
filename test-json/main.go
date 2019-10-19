@@ -6,8 +6,9 @@ import (
 	"log"
 	"net/http"
 	"time"
-
 	"websocket/websocket"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 var addr = flag.String("addr", "localhost:8080", "http service address")
@@ -22,7 +23,25 @@ func echo(wsConnection *websocket.WsConnection) {
 
 func messageHandler1(request websocket.WsMessage) websocket.WsMessage {
 	time.Sleep(2 * time.Second)
-	return websocket.WsMessage{Type: request.Type, Body: websocket.WsMessageBody{Type: "response1", Content: request.Body.Content}}
+	requestMessage, err := decode(request.Body.Content)
+	if err != nil {
+		log.Println(err)
+	}
+	return websocket.WsMessage{Type: request.Type, Body: websocket.WsMessageBody{Type: "response1", Content: requestMessage.Message}}
+}
+
+type RequestMessage struct {
+	Message string
+}
+
+func decode(message interface{}) (*RequestMessage, error) {
+	var requestMessage RequestMessage
+	err := mapstructure.Decode(message, &requestMessage)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return &requestMessage, nil
 }
 
 func messageHandler2(request websocket.WsMessage) websocket.WsMessage {
