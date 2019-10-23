@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 	"time"
-	"websocket/websocket"
+	"websocket"
 
 	"github.com/mitchellh/mapstructure"
 )
