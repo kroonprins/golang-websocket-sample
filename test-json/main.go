@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"html/template"
 	"log"
@@ -14,28 +15,32 @@ import (
 var addr = flag.String("addr", "localhost:8080", "http service address")
 
 func echo(wsConnection *websocket.WsConnection) {
-	wsConnection.RequestDeserializer(websocket.JsonDeserializer)
-	wsConnection.ResponseSerializer(websocket.JsonSerializer)
+	wsConnection.RequestDeserializer(websocket.JSONRequestDeserializer)
+	wsConnection.ResponseSerializer(websocket.JSONResponseSerializer)
 	wsConnection.MessageHandleFunc("request1", messageHandler1)
 	wsConnection.MessageHandleFunc("request2", messageHandler2)
 	wsConnection.Listen()
 }
 
-func messageHandler1(request websocket.WsMessage) websocket.WsMessage {
+func messageHandler1(request websocket.WsMessage) (*websocket.WsMessage, error) {
 	time.Sleep(2 * time.Second)
 	requestMessage, err := decode(request.Body.Content)
 	if err != nil {
 		log.Println(err)
+		return nil, err
 	}
-	return websocket.WsMessage{Type: request.Type, Body: websocket.WsMessageBody{Type: "response1", Content: requestMessage.Message}}
+	if requestMessage.Message == "give me an error" {
+		return nil, errors.New("here is your error")
+	}
+	return &websocket.WsMessage{Type: request.Type, Body: websocket.WsMessageBody{Type: "response1", Content: requestMessage.Message}}, nil
 }
 
-type RequestMessage struct {
+type requestMessage struct {
 	Message string
 }
 
-func decode(message interface{}) (*RequestMessage, error) {
-	var requestMessage RequestMessage
+func decode(message interface{}) (*requestMessage, error) {
+	var requestMessage requestMessage
 	err := mapstructure.Decode(message, &requestMessage)
 	if err != nil {
 		log.Println(err)
@@ -44,9 +49,9 @@ func decode(message interface{}) (*RequestMessage, error) {
 	return &requestMessage, nil
 }
 
-func messageHandler2(request websocket.WsMessage) websocket.WsMessage {
+func messageHandler2(request websocket.WsMessage) (*websocket.WsMessage, error) {
 	time.Sleep(7 * time.Second)
-	return websocket.WsMessage{Type: request.Type, Body: websocket.WsMessageBody{Type: "response2", Content: request.Body.Content}}
+	return &websocket.WsMessage{Type: request.Type, Body: websocket.WsMessageBody{Type: "response2", Content: request.Body.Content}}, nil
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
@@ -66,10 +71,11 @@ var homeTemplate = template.Must(template.New("").Parse(`
 <html>
 <head>
 <meta charset="utf-8">
-<script>  
+<script>
 window.addEventListener("load", function(evt) {
     var output = document.getElementById("output");
-    var input = document.getElementById("input");
+    var input1 = document.getElementById("input1");
+    var input2 = document.getElementById("input2");
     var ws;
     var print = function(message) {
         var d = document.createElement("div");
@@ -121,22 +127,34 @@ window.addEventListener("load", function(evt) {
         }
         ws.send(JSON.stringify(message));
         return false;
-    };
-    document.getElementById("close").onclick = function(evt) {
-        if (!ws) {
-            return false;
-        }
-        ws.close();
-        return false;
-    };
+  };
+	document.getElementById("send3").onclick = function(evt) {
+      if (!ws) {
+          return false;
+      }
+      print("SEND error");
+      const message = {
+          type: 'requestX',
+          body: 'blabla'
+      }
+      ws.send(JSON.stringify(message));
+      return false;
+  };
+  document.getElementById("close").onclick = function(evt) {
+      if (!ws) {
+          return false;
+      }
+      ws.close();
+      return false;
+  };
 });
 </script>
 </head>
 <body>
 <table>
 <tr><td valign="top" width="50%">
-<p>Click "Open" to create a connection to the server, 
-"Send" to send a message to the server and "Close" to close the connection. 
+<p>Click "Open" to create a connection to the server,
+"Send" to send a message to the server and "Close" to close the connection.
 You can change the message and send multiple times.
 <p>
 <form>
@@ -146,6 +164,7 @@ You can change the message and send multiple times.
 <button id="send1">Send</button>
 <p><input id="input2" type="text" value="Hello world 2">
 <button id="send2">Send</button>
+<button id="send3">Send error</button>
 </form>
 </td><td valign="top" width="50%">
 <div id="output"></div>

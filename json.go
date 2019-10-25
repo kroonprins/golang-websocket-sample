@@ -2,27 +2,28 @@ package websocket
 
 import (
 	"encoding/json"
-	"log"
 )
 
-type JsonWsMessageBody struct {
+type jsonWsMessageBody struct {
 	Type    string      `json:"type"`
 	Content interface{} `json:"body"`
 }
 
-func JsonDeserializer(message []byte) WsMessageBody {
-	var jsonWsMessageBody JsonWsMessageBody
+// JSONRequestDeserializer can be used as a default request deserializer for incoming json messages
+func JSONRequestDeserializer(message []byte) (*WsMessageBody, error) {
+	var jsonWsMessageBody jsonWsMessageBody
 	err := json.Unmarshal(message, &jsonWsMessageBody)
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
-	return WsMessageBody{Type: jsonWsMessageBody.Type, Content: jsonWsMessageBody.Content}
+	return &WsMessageBody{Type: jsonWsMessageBody.Type, Content: jsonWsMessageBody.Content}, nil
 }
 
-func JsonSerializer(messageBody WsMessageBody) []byte {
+// JSONResponseSerializer can be used as a default response serializer for outgoing json messages
+func JSONResponseSerializer(messageBody WsMessageBody) ([]byte, error) {
 	res, err := json.Marshal(messageBody)
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
-	return res
+	return res, nil
 }
