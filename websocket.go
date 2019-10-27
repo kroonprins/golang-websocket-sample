@@ -117,7 +117,7 @@ func (wsConnection *WsConnection) handleErrors() {
 		message, err := wsConnection.responseSerializer(wsConnection.getErrorHandler()(error.Error))
 		if err != nil {
 			log.Printf("Unexpected error serializing error message [%v][%s]\n", error, err)
-			message = []byte(fmt.Sprintf("Unexpected error"))
+			message = []byte("Unexpected error")
 		}
 		wsConnection.conn.WriteMessage(error.Type, message)
 	}

@@ -21,7 +21,8 @@ func JSONRequestDeserializer(message []byte) (*WsMessageBody, error) {
 
 // JSONResponseSerializer can be used as a default response serializer for outgoing json messages
 func JSONResponseSerializer(messageBody WsMessageBody) ([]byte, error) {
-	res, err := json.Marshal(messageBody)
+	jsonWsMessageBody := jsonWsMessageBody{Type: messageBody.Type, Content: messageBody.Content}
+	res, err := json.Marshal(jsonWsMessageBody)
 	if err != nil {
 		return nil, err
 	}
