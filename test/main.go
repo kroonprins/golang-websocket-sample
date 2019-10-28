@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"websocket"
+	"github.com/kroonprins/websocket"
 )
 
 var addr = flag.String("addr", "localhost:8080", "http service address")
